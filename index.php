@@ -26,16 +26,24 @@ function getLinesChannel($file)
     }
 }
 
-// rb opens the file in read binary mode
-$file = fopen('./messages.txt', 'rb');
+$host = "127.0.0.1";
+$port = 9001; // 9001 because 9000 was being used by php-fpm
 
-if (!$file) {
-    die("Unable to open file");
+// create a tcp server
+$server = stream_socket_server("tcp://{$host}:{$port}", $errno, $errstr);
+
+if (!$server) {
+    die("Unable to start server: $errstr ($errno)");
 }
 
-foreach(getLinesChannel($file) as $line) {
-    echo 'read: '. $line . PHP_EOL;
+$client = stream_socket_accept($server);
+
+if ($client) {
+    foreach (getLinesChannel($client) as $line) {
+        echo 'read: ' . $line . PHP_EOL;
+    }
+
+    fclose($client);
 }
 
-// tidy up
-fclose($file);
+fclose($server);
